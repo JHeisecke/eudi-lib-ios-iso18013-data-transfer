@@ -173,7 +173,7 @@ public class MdocGattServer: @unchecked Sendable, ObservableObject {
 	///
 	/// ``qrCodePayload`` is set to QR code data corresponding to the device engagement.
 	public func performDeviceEngagement(secureArea: any SecureArea, crv: CoseEcCurve, rfus: [String]? = nil) async throws {
-		guard !isPreview && !isInErrorState else {
+		guard !isInErrorState else {
 			logger.info("Current status is \(status)")
 			return
 		}
@@ -218,7 +218,7 @@ public class MdocGattServer: @unchecked Sendable, ObservableObject {
 	}
 
 	func startBleAdvertising() {
-		guard !isPreview && !isInErrorState else {
+		guard !isInErrorState else {
 			logger.info("Current status is \(status)")
 			return
 		}
@@ -248,9 +248,6 @@ public class MdocGattServer: @unchecked Sendable, ObservableObject {
 	}
 
 	public func stop() {
-		guard !isPreview else {
-			return
-		}
 		if let peripheralManager, peripheralManager.isAdvertising {
 			peripheralManager.stopAdvertising()
 		}
@@ -279,7 +276,7 @@ public class MdocGattServer: @unchecked Sendable, ObservableObject {
 	}
 
 	func handleStatusChange(_ newValue: TransferStatus) async {
-		guard !isPreview && !isInErrorState else {
+		guard !isInErrorState else {
 			return
 		}
 		logger.log(level: .info, "Transfer status will change to \(newValue)")
@@ -307,10 +304,6 @@ public class MdocGattServer: @unchecked Sendable, ObservableObject {
 		} else if newValue == .disconnected && status != .disconnected {
 			stop()
 		}
-	}
-
-	var isPreview: Bool {
-		ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
 	}
 
 	var isInErrorState: Bool { status == .error }
@@ -388,13 +381,9 @@ public class MdocGattServer: @unchecked Sendable, ObservableObject {
 	}
 
 	func sendDataWithUpdates() {
-		guard !isPreview else {
-			return
-		}
 		guard sendBuffer.count > 0 else {
 			status = .responseSent
 			logger.info("Finished sending BLE data")
-			stop()
 			return
 		}
 		let b = peripheralManager.updateValue(sendBuffer.first!, for: server2ClientCharacteristic, onSubscribedCentrals: [remoteCentral])
