@@ -127,16 +127,21 @@ public class MdocGattServer: @unchecked Sendable, ObservableObject {
 					}
 					let bStart = h == BleTransferMode.START_DATA.first!
 					let bEnd = (h == BleTransferMode.END_DATA.first!)
-					if data.count > 1 {
-						server.readBuffer.append(data.advanced(by: 1))
-					}
 					if !bStart && !bEnd {
 						logger.warning("Not a valid request block: \(data)")
+						peripheral.respond(to: requests[0], withResult: .unlikelyError)
+						return
+					}
+					if data.count > 1 {
+						server.readBuffer.append(data.advanced(by: 1))
 					}
 					if bEnd {
 						server.status = .requestReceived
 					}
 				}
+			} else {
+				peripheral.respond(to: requests[0], withResult: .requestNotSupported)
+				return
 			}
 			peripheral.respond(to: requests[0], withResult: .success)
 		}
