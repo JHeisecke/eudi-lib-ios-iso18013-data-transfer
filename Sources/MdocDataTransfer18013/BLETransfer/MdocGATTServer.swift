@@ -112,12 +112,7 @@ public class MdocGattServer: @unchecked Sendable, ObservableObject {
 					server.status = .started
 					server.readBuffer.removeAll()
 				} else if h == BleTransferMode.END_REQUEST.first! {
-					guard server.status == .responseSent else {
-						logger.error("State END command rejected. Not in responseSent state")
-						peripheral.respond(to: requests[0], withResult: .unlikelyError)
-						return
-					}
-					logger.info("End received to state characteristic") // --> end
+					logger.info("End received to state characteristic (status: \(server.status))") // --> end
 					server.status = .disconnected
 				}
 			} else if requests[0].characteristic.uuid == MdocServiceCharacteristic.client2Server.uuid {
@@ -307,6 +302,7 @@ public class MdocGattServer: @unchecked Sendable, ObservableObject {
 		else if newValue == .initialized {
 			initPeripheralManager()
 		} else if newValue == .disconnected && status != .disconnected {
+			sessionEncryption = nil
 			stop()
 		}
 	}
