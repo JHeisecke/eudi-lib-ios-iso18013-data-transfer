@@ -28,7 +28,12 @@ public struct UserRequestInfo : Sendable {
 	public var docDataFormats: [String: DocDataFormat]
 	/// items requested
 	public var itemsRequested: RequestItems
+	/// reader Authentication results (per doc type)
+	public var readerAuthResults: [DocType: ReaderAuthenticationResult] = [:]
 
-	public var readerValidations: [String: ReaderValidation] = [:]
+	/// default reader authentication result (if docType specific result is not available)
+	public var defaultReaderAuthResult: ReaderAuthenticationResult? {
+		readerAuthResults[""] ?? readerAuthResults.first?.value
+	}
 
 }

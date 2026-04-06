@@ -90,7 +90,7 @@ public class MdocHelpers {
 			var userRequestInfo = UserRequestInfo(docDataFormats: docs.mapValues { _ in .cbor }, itemsRequested: validRequestItems, deviceRequestBytes: Data(requestData))
 			for docR in deviceRequest.docRequests {
 				let mdocAuth = MdocReaderAuthentication(transcript: sessionEncryption.sessionTranscript)
-				let readerValidation: ReaderValidation
+				let readerValidation: ReaderAuthenticationResult
 				if let readerAuthRawCBOR = docR.readerAuthRawCBOR {
 					let authBytes = Data(readerAuthRawCBOR.encode())
 					let certData = docR.readerCertificates
@@ -98,20 +98,20 @@ public class MdocHelpers {
 						let certificateIssuer = MdocHelpers.getCN(from: x509.subject.description)
 						do {
 							let (b, reasonFailure) = try mdocAuth.validateReaderAuth(readerAuthCBOR: readerAuthRawCBOR, readerAuthX5c: certData, itemsRequestRawData: docR.itemsRequestRawData!, rootIaca: iaca)
-							readerValidation = ReaderValidation(isValidated: b, certificateIssuer: certificateIssuer, validationMessage: reasonFailure, authBytes: authBytes, certificateChain: certData)
+							readerValidation = ReaderAuthenticationResult(isValidated: b, certificateIssuer: certificateIssuer, validationMessage: reasonFailure, authBytes: authBytes, certificateChain: certData)
 						} catch {
 							logger.warning("Reader auth validation failed: \(error.localizedDescription)")
-							readerValidation = ReaderValidation(isValidated: false, certificateIssuer: certificateIssuer, validationMessage: "Reader auth validation failed: \(error.localizedDescription)", authBytes: authBytes, certificateChain: certData)
+							readerValidation = ReaderAuthenticationResult(isValidated: false, certificateIssuer: certificateIssuer, validationMessage: "Reader auth validation failed: \(error.localizedDescription)", authBytes: authBytes, certificateChain: certData)
 						}
 					} else {
 						logger.warning("Reader certificate missing or malformed")
-						readerValidation = ReaderValidation(isValidated: false, validationMessage: "Reader certificate missing or malformed", authBytes: authBytes)
+						readerValidation = ReaderAuthenticationResult(isValidated: false, validationMessage: "Reader certificate missing or malformed", authBytes: authBytes)
 					}
 				} else {
 					logger.warning("Reader authentication not present in request")
-					readerValidation = ReaderValidation(isValidated: false, validationMessage: "Reader authentication not present in request")
+					readerValidation = ReaderAuthenticationResult(isValidated: false, validationMessage: "Reader authentication not present in request")
 				}
-				userRequestInfo.readerValidations[docR.itemsRequest.docType] = readerValidation
+				userRequestInfo.readerAuthResults[docR.itemsRequest.docType] = readerValidation
 			}
 			return .success((sessionEncryption: sessionEncryption, deviceRequest: deviceRequest, userRequestInfo: userRequestInfo, isValidRequest: !bInvalidReq))
 		} catch { return .failure(error) }

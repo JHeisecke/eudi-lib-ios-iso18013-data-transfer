@@ -16,7 +16,7 @@ limitations under the License.
 import Foundation
 
 /// Encapsulates reader authentication validation results
-public struct ReaderValidation: Sendable {
+public struct ReaderAuthenticationResult: Sendable {
 	/// Whether reader auth was validated successfully
 	/// - `true`: reader auth was present and validated successfully
 	/// - `false`: reader auth was absent, certificate was malformed, or validation failed
