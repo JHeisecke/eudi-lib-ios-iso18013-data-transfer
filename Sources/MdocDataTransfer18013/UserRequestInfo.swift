@@ -32,7 +32,10 @@ public struct UserRequestInfo : Sendable {
 	public var docDataFormats: [String: DocDataFormat]
 	/// items requested
 	public var itemsRequested: RequestItems
-	/// reader authentication from verifer validated
+	/// reader authentication from verifier validated
+	/// - `true`: reader auth was present and validated successfully
+	/// - `false`: reader auth was absent, certificate was malformed, or validation failed
+	/// - `nil`: no doc requests were present in the device request
 	public var readerAuthValidated: Bool?
 	/// reader certificate issuer (issuer common name)
 	public var readerCertificateIssuer: String?

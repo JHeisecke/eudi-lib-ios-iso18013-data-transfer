@@ -90,12 +90,30 @@ public class MdocHelpers {
 			var userRequestInfo = UserRequestInfo(docDataFormats: docs.mapValues { _ in .cbor }, itemsRequested: validRequestItems, deviceRequestBytes: Data(requestData))
 			if let docR = deviceRequest.docRequests.first {
 				let mdocAuth = MdocReaderAuthentication(transcript: sessionEncryption.sessionTranscript)
-				if let readerAuthRawCBOR = docR.readerAuthRawCBOR, case let certData = docR.readerCertificates, certData.count > 0, let x509 = try? X509.Certificate(derEncoded: [UInt8](certData.first!)), let (b,reasonFailure) = try? mdocAuth.validateReaderAuth(readerAuthCBOR: readerAuthRawCBOR, readerAuthX5c: certData, itemsRequestRawData: docR.itemsRequestRawData!, rootIaca: iaca) {
-					userRequestInfo.readerCertificateIssuer = MdocHelpers.getCN(from: x509.subject.description)
+				guard let readerAuthRawCBOR = docR.readerAuthRawCBOR else {
+					logger.warning("Reader authentication not present in request")
+					userRequestInfo.readerAuthValidated = false
+					userRequestInfo.readerCertificateValidationMessage = "Reader authentication not present in request"
+					return .success((sessionEncryption: sessionEncryption, deviceRequest: deviceRequest, userRequestInfo: userRequestInfo, isValidRequest: !bInvalidReq))
+				}
+				userRequestInfo.readerAuthBytes = Data(readerAuthRawCBOR.encode())
+				let certData = docR.readerCertificates
+				guard certData.count > 0, let x509 = try? X509.Certificate(derEncoded: [UInt8](certData.first!)) else {
+					logger.warning("Reader certificate missing or malformed")
+					userRequestInfo.readerAuthValidated = false
+					userRequestInfo.readerCertificateValidationMessage = "Reader certificate missing or malformed"
+					return .success((sessionEncryption: sessionEncryption, deviceRequest: deviceRequest, userRequestInfo: userRequestInfo, isValidRequest: !bInvalidReq))
+				}
+				userRequestInfo.certificateChain = certData
+				userRequestInfo.readerCertificateIssuer = MdocHelpers.getCN(from: x509.subject.description)
+				do {
+					let (b, reasonFailure) = try mdocAuth.validateReaderAuth(readerAuthCBOR: readerAuthRawCBOR, readerAuthX5c: certData, itemsRequestRawData: docR.itemsRequestRawData!, rootIaca: iaca)
 					userRequestInfo.readerAuthValidated = b
 					if let reasonFailure { userRequestInfo.readerCertificateValidationMessage = reasonFailure }
-					if let rab = docR.readerAuthRawCBOR { userRequestInfo.readerAuthBytes = Data(rab.encode()) }
-					userRequestInfo.certificateChain = certData
+				} catch {
+					logger.warning("Reader auth validation failed: \(error.localizedDescription)")
+					userRequestInfo.readerAuthValidated = false
+					userRequestInfo.readerCertificateValidationMessage = "Reader auth validation failed: \(error.localizedDescription)"
 				}
 			}
 			return .success((sessionEncryption: sessionEncryption, deviceRequest: deviceRequest, userRequestInfo: userRequestInfo, isValidRequest: !bInvalidReq))
