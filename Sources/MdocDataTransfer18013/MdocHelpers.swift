@@ -389,6 +389,8 @@ public class MdocHelpers {
 		})
 		vc.present(alertController, animated: true)
 	}
+	
+	#endif
 
 	public static func getPrivateKeys(_ docKeyInfos: [String: Data?], _ documentKeyIndexes: [String: Int]) async throws -> [String: CoseKeyPrivate] {
 		let privateKeyObjects: [String: CoseKeyPrivate] = try await Dictionary(uniqueKeysWithValues: docKeyInfos.asyncCompactMap {
@@ -400,8 +402,6 @@ public class MdocHelpers {
 		})
 		return privateKeyObjects
 	}
-	
-	#endif
 
 	/// Get the common name (CN) from the certificate distringuished name (DN)
 	public static func getCN(from dn: String) -> String  {
