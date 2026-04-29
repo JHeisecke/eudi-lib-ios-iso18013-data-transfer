@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2023 European Commission
+Copyright (c) 2026 European Commission
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,33 +17,23 @@ import Foundation
 import MdocDataModel18013
 
 public struct UserRequestInfo : Sendable {
-	public init(docDataFormats: [String: DocDataFormat], itemsRequested: RequestItems, deviceRequestBytes: Data? = nil, readerAuthBytes: Data? = nil, certificateChain: [Data]? = nil, readerAuthValidated: Bool? = nil, readerCertificateIssuer: String? = nil, readerCertificateValidationMessage: String? = nil, readerLegalName: String? = nil) {
+	public init(docDataFormats: [String: DocDataFormat], itemsRequested: RequestItems, deviceRequestBytes: Data? = nil) {
 		self.docDataFormats = docDataFormats
 		self.itemsRequested = itemsRequested
-		self.readerAuthValidated = readerAuthValidated
-		self.readerCertificateIssuer = readerCertificateIssuer
-		self.readerCertificateValidationMessage = readerCertificateValidationMessage
-		self.readerLegalName = readerLegalName
 		self.deviceRequestBytes = deviceRequestBytes
-        self.readerAuthBytes = readerAuthBytes
-		self.certificateChain = certificateChain
 	}
+	/// device request bytes (encoded cbor)
+	public var deviceRequestBytes: Data?
 	/// docType to format map
 	public var docDataFormats: [String: DocDataFormat]
 	/// items requested
 	public var itemsRequested: RequestItems
-	/// reader authentication from verifer validated
-	public var readerAuthValidated: Bool?
-	/// reader certificate issuer (issuer common name)
-	public var readerCertificateIssuer: String?
-	/// reader certificate validation message
-	public var readerCertificateValidationMessage: String?
-	/// reader legal name
-	public var readerLegalName: String?
-	/// device request bytes (encoded cbor)
-	public var deviceRequestBytes: Data?
-	/// reader authentication bytes (encoded cbor)
-	public var readerAuthBytes: Data?
- 	/// certificate chain (base64 pem encoded)
-	public var certificateChain: [Data]?
+	/// reader Authentication results (per doc type)
+	public var readerAuthResults: [DocType: ReaderAuthenticationResult] = [:]
+
+	/// default reader authentication result (if docType specific result is not available)
+	public var defaultReaderAuthResult: ReaderAuthenticationResult? {
+		readerAuthResults[""] ?? readerAuthResults.first?.value
+	}
+
 }

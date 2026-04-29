@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2023 European Commission
+Copyright (c) 2026 European Commission
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -88,15 +88,30 @@ public class MdocHelpers {
 			guard let (drTest, validRequestItems, _, _, _) = try await Self.getDeviceResponseToSend(deviceRequest: deviceRequest, issuerSigned: docs, docMetadata: docMetadata, selectedItems: nil, sessionEncryption: sessionEncryption, eReaderKey: sessionEncryption.sessionKeys.publicKey, privateKeyObjects: privateKeyObjects, dauthMethod: dauthMethod, unlockData: unlockData) else { logger.error("Valid request items nil"); return .failure(Self.makeError(code: .requestDecodeError)) }
 			let bInvalidReq = (drTest.documents == nil)
 			var userRequestInfo = UserRequestInfo(docDataFormats: docs.mapValues { _ in .cbor }, itemsRequested: validRequestItems, deviceRequestBytes: Data(requestData))
-			if let docR = deviceRequest.docRequests.first {
+			for docR in deviceRequest.docRequests {
 				let mdocAuth = MdocReaderAuthentication(transcript: sessionEncryption.sessionTranscript)
-				if let readerAuthRawCBOR = docR.readerAuthRawCBOR, case let certData = docR.readerCertificates, certData.count > 0, let x509 = try? X509.Certificate(derEncoded: [UInt8](certData.first!)), let (b,reasonFailure) = try? mdocAuth.validateReaderAuth(readerAuthCBOR: readerAuthRawCBOR, readerAuthX5c: certData, itemsRequestRawData: docR.itemsRequestRawData!, rootIaca: iaca) {
-					userRequestInfo.readerCertificateIssuer = MdocHelpers.getCN(from: x509.subject.description)
-					userRequestInfo.readerAuthValidated = b
-					if let reasonFailure { userRequestInfo.readerCertificateValidationMessage = reasonFailure }
-					if let rab = docR.readerAuthRawCBOR { userRequestInfo.readerAuthBytes = Data(rab.encode()) }
-					userRequestInfo.certificateChain = certData
+				let readerValidation: ReaderAuthenticationResult
+				if let readerAuthRawCBOR = docR.readerAuthRawCBOR {
+					let authBytes = Data(readerAuthRawCBOR.encode())
+					let certData = docR.readerCertificates
+					if certData.count > 0, let x509 = try? X509.Certificate(derEncoded: [UInt8](certData.first!)) {
+						let certificateIssuer = MdocHelpers.getCN(from: x509.subject.description)
+						do {
+							let (b, reasonFailure) = try mdocAuth.validateReaderAuth(readerAuthCBOR: readerAuthRawCBOR, readerAuthX5c: certData, itemsRequestRawData: docR.itemsRequestRawData!, rootIaca: iaca)
+							readerValidation = ReaderAuthenticationResult(isValidated: b, certificateIssuer: certificateIssuer, validationMessage: reasonFailure, authBytes: authBytes, certificateChain: certData)
+						} catch {
+							logger.warning("Reader auth validation failed: \(error.localizedDescription)")
+							readerValidation = ReaderAuthenticationResult(isValidated: false, certificateIssuer: certificateIssuer, validationMessage: "Reader auth validation failed: \(error.localizedDescription)", authBytes: authBytes, certificateChain: certData)
+						}
+					} else {
+						logger.warning("Reader certificate missing or malformed")
+						readerValidation = ReaderAuthenticationResult(isValidated: false, validationMessage: "Reader certificate missing or malformed", authBytes: authBytes)
+					}
+				} else {
+					logger.warning("Reader authentication not present in request")
+					readerValidation = ReaderAuthenticationResult(isValidated: false, validationMessage: "Reader authentication not present in request")
 				}
+				userRequestInfo.readerAuthResults[docR.itemsRequest.docType] = readerValidation
 			}
 			return .success((sessionEncryption: sessionEncryption, deviceRequest: deviceRequest, userRequestInfo: userRequestInfo, isValidRequest: !bInvalidReq))
 		} catch { return .failure(error) }
@@ -292,13 +307,10 @@ public class MdocHelpers {
 			}
 			let dr = documents.count == 1 ? deviceResponse : getSingleDocumentDeviceResponse(document: document)
 			let docBytes = dr.toCBOR(options: CBOROptions()).encode()
-			// Generate ZkDocument
-			if let zkDocument = try? zkSystem.generateProof(zkSystemSpec: zkSpec, docBytes: docBytes, x: nil, y: nil, sessionTranscriptBytes: sessionTranscript.encode(options: CBOROptions()), timestamp: Date()) {
-				zkDocuments.append(zkDocument)
-				zkpDocumentIds.append(docIdsFiltered[index])
-			} else {
-				documents2.append(document)
-			}
+			// Generate ZkDocument — fail closed if proof generation fails when ZKP is matched
+			let zkDocument = try zkSystem.generateProof(zkSystemSpec: zkSpec, docBytes: docBytes, x: nil, y: nil, sessionTranscriptBytes: sessionTranscript.encode(options: CBOROptions()), timestamp: Date())
+			zkDocuments.append(zkDocument)
+			zkpDocumentIds.append(docIdsFiltered[index])
 		}
 		guard !zkDocuments.isEmpty else { return (deviceResponse, zkpDocumentIds) }
 		return (DeviceResponse(documents: documents2, zkDocuments: zkDocuments, documentErrors: deviceResponse.documentErrors, status: deviceResponse.status), zkpDocumentIds)
@@ -377,21 +389,19 @@ public class MdocHelpers {
 		})
 		vc.present(alertController, animated: true)
 	}
-
-	/// Finds the top view controller in the view hierarchy of the app. It is used to present a new view controller on top of any existing view controllers.
-	@MainActor
-	public static func getTopViewController(base: UIViewController? = UIApplication.shared.windows.first { $0.isKeyWindow }?.rootViewController) -> UIViewController? {
-		if let nav = base as? UINavigationController {
-			return getTopViewController(base: nav.visibleViewController)
-		} else if let tab = base as? UITabBarController, let selected = tab.selectedViewController {
-			return getTopViewController(base: selected)
-		} else if let presented = base?.presentedViewController {
-			return getTopViewController(base: presented)
-		}
-		return base
-	}
-
+	
 	#endif
+
+	public static func getPrivateKeys(_ docKeyInfos: [String: Data?], _ documentKeyIndexes: [String: Int]) async throws -> [String: CoseKeyPrivate] {
+		let privateKeyObjects: [String: CoseKeyPrivate] = try await Dictionary(uniqueKeysWithValues: docKeyInfos.asyncCompactMap {
+			guard let dki = DocKeyInfo(from: $0.value), let keyIndex = documentKeyIndexes[$0.key] else { return nil }
+			let secureArea = SecureAreaRegistry.shared.get(name: dki.secureAreaName)
+			let (_, curve) = try await secureArea.getInfoAndCurve(id: $0.key)
+			let coseKeyPrivate = try await CoseKeyPrivate(privateKeyId: $0.key, index: keyIndex, secureArea: secureArea, curve: curve)
+			return ($0.key, coseKeyPrivate)
+		})
+		return privateKeyObjects
+	}
 
 	/// Get the common name (CN) from the certificate distringuished name (DN)
 	public static func getCN(from dn: String) -> String  {

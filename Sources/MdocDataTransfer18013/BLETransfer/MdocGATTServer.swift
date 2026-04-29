@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2023 European Commission
+Copyright (c) 2026 European Commission
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -69,8 +69,8 @@ public class MdocGattServer: @unchecked Sendable, ObservableObject {
 	var subscribeCount: Int = 0
 	var initSuccess:Bool = false
 
-	public init(parameters: InitializeTransferData) throws {
-		let objs = parameters.toInitializeTransferInfo()
+	public init(parameters: InitializeTransferData) async throws {
+		let objs = try await parameters.toInitializeTransferInfo()
 		self.docs = try objs.documentObjects.mapValues { try IssuerSigned(data: $0.bytes) }
 		docMetadata = parameters.docMetadata
 		self.privateKeyObjects = objs.privateKeyObjects
@@ -112,12 +112,7 @@ public class MdocGattServer: @unchecked Sendable, ObservableObject {
 					server.status = .started
 					server.readBuffer.removeAll()
 				} else if h == BleTransferMode.END_REQUEST.first! {
-					guard server.status == .responseSent else {
-						logger.error("State END command rejected. Not in responseSent state")
-						peripheral.respond(to: requests[0], withResult: .unlikelyError)
-						return
-					}
-					logger.info("End received to state characteristic") // --> end
+					logger.info("End received to state characteristic (status: \(server.status))") // --> end
 					server.status = .disconnected
 				}
 			} else if requests[0].characteristic.uuid == MdocServiceCharacteristic.client2Server.uuid {
@@ -127,16 +122,21 @@ public class MdocGattServer: @unchecked Sendable, ObservableObject {
 					}
 					let bStart = h == BleTransferMode.START_DATA.first!
 					let bEnd = (h == BleTransferMode.END_DATA.first!)
-					if data.count > 1 {
-						server.readBuffer.append(data.advanced(by: 1))
-					}
 					if !bStart && !bEnd {
 						logger.warning("Not a valid request block: \(data)")
+						peripheral.respond(to: requests[0], withResult: .unlikelyError)
+						return
+					}
+					if data.count > 1 {
+						server.readBuffer.append(data.advanced(by: 1))
 					}
 					if bEnd {
 						server.status = .requestReceived
 					}
 				}
+			} else {
+				peripheral.respond(to: requests[0], withResult: .requestNotSupported)
+				return
 			}
 			peripheral.respond(to: requests[0], withResult: .success)
 		}
@@ -173,7 +173,7 @@ public class MdocGattServer: @unchecked Sendable, ObservableObject {
 	///
 	/// ``qrCodePayload`` is set to QR code data corresponding to the device engagement.
 	public func performDeviceEngagement(secureArea: any SecureArea, crv: CoseEcCurve, rfus: [String]? = nil) async throws {
-		guard !isPreview && !isInErrorState else {
+		guard !isInErrorState else {
 			logger.info("Current status is \(status)")
 			return
 		}
@@ -182,7 +182,7 @@ public class MdocGattServer: @unchecked Sendable, ObservableObject {
 			error = MdocHelpers.makeError(code: .unexpected_error, str: error?.localizedDescription ?? "Not initialized!")
 			return
 		}
-		deviceEngagement = DeviceEngagement(isBleServer: true, rfus: rfus)
+		deviceEngagement = DeviceEngagement(supportsCentralClientMode: false, supportsPeripheralServerMode: true, rfus: rfus)
 		try await deviceEngagement!.makePrivateKey(crv: crv, secureArea: secureArea)
 		sessionEncryption = nil
 #if os(iOS)
@@ -218,7 +218,7 @@ public class MdocGattServer: @unchecked Sendable, ObservableObject {
 	}
 
 	func startBleAdvertising() {
-		guard !isPreview && !isInErrorState else {
+		guard !isInErrorState else {
 			logger.info("Current status is \(status)")
 			return
 		}
@@ -248,9 +248,6 @@ public class MdocGattServer: @unchecked Sendable, ObservableObject {
 	}
 
 	public func stop() {
-		guard !isPreview else {
-			return
-		}
 		if let peripheralManager, peripheralManager.isAdvertising {
 			peripheralManager.stopAdvertising()
 		}
@@ -279,7 +276,7 @@ public class MdocGattServer: @unchecked Sendable, ObservableObject {
 	}
 
 	func handleStatusChange(_ newValue: TransferStatus) async {
-		guard !isPreview && !isInErrorState else {
+		guard !isInErrorState else {
 			return
 		}
 		logger.log(level: .info, "Transfer status will change to \(newValue)")
@@ -305,12 +302,9 @@ public class MdocGattServer: @unchecked Sendable, ObservableObject {
 		else if newValue == .initialized {
 			initPeripheralManager()
 		} else if newValue == .disconnected && status != .disconnected {
+			sessionEncryption = nil
 			stop()
 		}
-	}
-
-	var isPreview: Bool {
-		ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
 	}
 
 	var isInErrorState: Bool { status == .error }
@@ -388,13 +382,9 @@ public class MdocGattServer: @unchecked Sendable, ObservableObject {
 	}
 
 	func sendDataWithUpdates() {
-		guard !isPreview else {
-			return
-		}
 		guard sendBuffer.count > 0 else {
 			status = .responseSent
 			logger.info("Finished sending BLE data")
-			stop()
 			return
 		}
 		let b = peripheralManager.updateValue(sendBuffer.first!, for: server2ClientCharacteristic, onSubscribedCentrals: [remoteCentral])
