@@ -1,40 +1,40 @@
 {
-  "originHash" : "7e617e26ea5f64b8c304c1fca1a04c552f2cbdc4fd985d2483a5158a40ee481a",
+  "originHash" : "11211bebe6f9a43f96d141f5ded6d2ff87004e4dabb34092e02d09fe82bc6ca9",
   "pins" : [
     {
       "identity" : "eudi-lib-ios-iso18013-data-model",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/eu-digital-identity-wallet/eudi-lib-ios-iso18013-data-model.git",
+      "location" : "https://github.com/JHeisecke/eudi-lib-ios-iso18013-data-model.git",
       "state" : {
-        "revision" : "87b0059b1da7b6c195fe78875637f7130cb4ac54",
-        "version" : "0.14.0"
+        "branch" : "main",
+        "revision" : "dc2399601920e5d712f9db1d54caa153ad04654f"
       }
     },
     {
       "identity" : "eudi-lib-ios-iso18013-security",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/eu-digital-identity-wallet/eudi-lib-ios-iso18013-security.git",
+      "location" : "https://github.com/JHeisecke/eudi-lib-ios-iso18013-security.git",
       "state" : {
-        "revision" : "7cf15ba00a28a771cf15e2c8933972de9e4bc9e1",
-        "version" : "0.14.0"
+        "branch" : "main",
+        "revision" : "1c0de673b4c660128665ae7a4ca5c18bf0c4a2e8"
       }
     },
     {
       "identity" : "swift-asn1",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-asn1.git",
+      "location" : "https://github.com/JHeisecke/swift-asn1.git",
       "state" : {
-        "revision" : "eb50cbd14606a9161cbc5d452f18797c90ef0bab",
-        "version" : "1.7.0"
+        "branch" : "main",
+        "revision" : "c710ba87cb1c75c5e6151d45e227f17aca3828a9"
       }
     },
     {
       "identity" : "swift-certificates",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-certificates.git",
+      "location" : "https://github.com/JHeisecke/swift-certificates.git",
       "state" : {
-        "revision" : "5aa1c0d1bc204908df47c2075bdbb39573d05e8d",
-        "version" : "1.19.0"
+        "branch" : "fix/swift-6.2-library-evolution-inlinable",
+        "revision" : "459b2ae22ff8c372c080c92335da187fe2adc17a"
       }
     },
     {
@@ -49,19 +49,19 @@
     {
       "identity" : "swift-crypto",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-crypto.git",
+      "location" : "https://github.com/JHeisecke/swift-crypto.git",
       "state" : {
-        "revision" : "1b6b2e274e85105bfa155183145a1dcfd63331f1",
-        "version" : "4.5.0"
+        "branch" : "fix/swift-6.2-library-evolution-inlinable",
+        "revision" : "018ba04c8c3f4639735a4637110f55822557be32"
       }
     },
     {
       "identity" : "swift-log",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-log.git",
+      "location" : "https://github.com/JHeisecke/swift-log.git",
       "state" : {
-        "revision" : "5073617dac96330a486245e4c0179cb0a6fd2256",
-        "version" : "1.12.0"
+        "branch" : "fix/swift-6.2-library-evolution-inlinable",
+        "revision" : "0ed72548f95245a88307265393891c341f04ca02"
       }
     },
     {
