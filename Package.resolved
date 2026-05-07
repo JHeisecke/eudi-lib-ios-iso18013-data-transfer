@@ -7,7 +7,7 @@
       "location" : "https://github.com/JHeisecke/eudi-lib-ios-iso18013-data-model.git",
       "state" : {
         "branch" : "main",
-        "revision" : "dc2399601920e5d712f9db1d54caa153ad04654f"
+        "revision" : "ef69c321e67574a0dc96b7623e5210fbaf7a1fd7"
       }
     },
     {
@@ -16,7 +16,7 @@
       "location" : "https://github.com/JHeisecke/eudi-lib-ios-iso18013-security.git",
       "state" : {
         "branch" : "main",
-        "revision" : "51045a270d3cd677279622372f9cb66554d9862c"
+        "revision" : "7e52c82c9ea7fe6359a8f5d5f9f799b0281a98a8"
       }
     },
     {
@@ -25,7 +25,7 @@
       "location" : "https://github.com/JHeisecke/swift-asn1.git",
       "state" : {
         "branch" : "main",
-        "revision" : "c710ba87cb1c75c5e6151d45e227f17aca3828a9"
+        "revision" : "9793159c0b6ad29b4504c519b17c851b04cc5608"
       }
     },
     {
@@ -34,7 +34,7 @@
       "location" : "https://github.com/JHeisecke/swift-certificates.git",
       "state" : {
         "branch" : "fix/swift-6.2-library-evolution-inlinable",
-        "revision" : "a34dea382a8e8a6393f01c47f8d8fad69a23cf8b"
+        "revision" : "5c0c615a57805135da036d0f1b7093fe94031cd4"
       }
     },
     {
@@ -43,7 +43,7 @@
       "location" : "https://github.com/JHeisecke/swift-collections.git",
       "state" : {
         "branch" : "main",
-        "revision" : "77e99ff65ab12b3c2cd4f64b875965209f133d4c"
+        "revision" : "584ae2b3c52c55e529cf12efce7c5c9927289039"
       }
     },
     {
@@ -52,7 +52,7 @@
       "location" : "https://github.com/JHeisecke/swift-crypto.git",
       "state" : {
         "branch" : "fix/swift-6.2-library-evolution-inlinable",
-        "revision" : "018ba04c8c3f4639735a4637110f55822557be32"
+        "revision" : "32a296939b786943224c9d49e7e538020dc9edd2"
       }
     },
     {
