@@ -1,5 +1,5 @@
 {
-  "originHash" : "11211bebe6f9a43f96d141f5ded6d2ff87004e4dabb34092e02d09fe82bc6ca9",
+  "originHash" : "984bd6896d8e0eee9fec9d7b7554b2f6be7259934bbe0e0d1d16e176ba425b37",
   "pins" : [
     {
       "identity" : "eudi-lib-ios-iso18013-data-model",
@@ -16,7 +16,7 @@
       "location" : "https://github.com/JHeisecke/eudi-lib-ios-iso18013-security.git",
       "state" : {
         "branch" : "main",
-        "revision" : "1c0de673b4c660128665ae7a4ca5c18bf0c4a2e8"
+        "revision" : "51045a270d3cd677279622372f9cb66554d9862c"
       }
     },
     {
@@ -34,16 +34,16 @@
       "location" : "https://github.com/JHeisecke/swift-certificates.git",
       "state" : {
         "branch" : "fix/swift-6.2-library-evolution-inlinable",
-        "revision" : "459b2ae22ff8c372c080c92335da187fe2adc17a"
+        "revision" : "a34dea382a8e8a6393f01c47f8d8fad69a23cf8b"
       }
     },
     {
       "identity" : "swift-collections",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-collections.git",
+      "location" : "https://github.com/JHeisecke/swift-collections.git",
       "state" : {
-        "revision" : "6675bc0ff86e61436e615df6fc5174e043e57924",
-        "version" : "1.4.1"
+        "branch" : "main",
+        "revision" : "77e99ff65ab12b3c2cd4f64b875965209f133d4c"
       }
     },
     {
