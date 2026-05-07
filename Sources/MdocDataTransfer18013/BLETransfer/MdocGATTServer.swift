@@ -16,6 +16,7 @@ limitations under the License.
 
 //  MdocGATTServer.swift
 import Foundation
+import Combine
 import SwiftCBOR
 import CoreBluetooth
 #if canImport(UIKit)
